@@ -130,8 +130,8 @@ if page == 'Model Performance':
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
             # Apply random under-sampling
-            under_sampler = SMOTE(random_state=42)
-            X_train_res, y_train_res = under_sampler.fit_resample(X_train, y_train)
+            smote = SMOTE(random_state=42)
+            X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
 
             # Create a pipeline for preprocessing
             pipeline = Pipeline([
