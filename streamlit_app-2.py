@@ -129,6 +129,7 @@ if page == 'Model Performance':
 
             # Split the data into training and test sets
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
 
             # Apply random under-sampling
             under_sampler = RandomUnderSampler(random_state=42)
@@ -384,3 +385,5 @@ elif credit_score >= 400:
     st.warning("🧡 Fair credit score.")
 else:
     st.error("❤️ Poor credit score.")
+
+
