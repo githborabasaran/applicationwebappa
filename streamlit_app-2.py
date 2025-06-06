@@ -264,48 +264,47 @@ elif page == 'Neural Network':
     - Training a neural network involves adjusting the weights between the neurons to minimize the error.
     """)
 # Add a section for the accuracy plot
-st.markdown("### 📊 Model Accuracy Comparison 🏅")
-st.write("The bar chart below shows the accuracy of each model evaluated.")
+if 'results' in locals() and results:
+    st.markdown("### 📊 Model Accuracy Comparison 🏅")
+    st.write("The bar chart below shows the accuracy of each model evaluated.")
 
-# Plot Accuracy of Each Model
-fig, ax = plt.subplots(figsize=(10, 6))
-model_names = list(results.keys())
-accuracies = [results[name]['Accuracy'] for name in model_names]
+    # Plot Accuracy of Each Model
+    fig, ax = plt.subplots(figsize=(10, 6))
+    model_names = list(results.keys())
+    accuracies = [results[name]['Accuracy'] for name in model_names]
 
-ax.barh(model_names, accuracies, color=['#001a33', '#ff4500', '#990000', '#ffa500', '#33cc33'])
-ax.set_xlabel('Accuracy', color='#001a33')
-ax.set_title('Model Accuracy Comparison', color='#cc0000')
-st.pyplot(fig)
+    ax.barh(model_names, accuracies, color=['#001a33', '#ff4500', '#990000', '#ffa500', '#33cc33'])
+    ax.set_xlabel('Accuracy', color='#001a33')
+    ax.set_title('Model Accuracy Comparison', color='#cc0000')
+    st.pyplot(fig)
 
-# Add a section for the ROC curve plot
-st.markdown("### 📈 ROC Curve for Each Model 📉")
-st.write("The ROC curve below compares the true positive rate (TPR) and false positive rate (FPR) of each model.")
+    # Add a section for the ROC curve plot
+    st.markdown("### 📈 ROC Curve for Each Model 📉")
+    st.write("The ROC curve below compares the true positive rate (TPR) and false positive rate (FPR) of each model.")
 
-# Plot AUC Curve for Each Model
-fig, ax = plt.subplots(figsize=(10, 6))
+    # Plot AUC Curve for Each Model
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-for name, model in models.items():
-    # Compute the ROC curve for the current model
-    try:
-        if len(np.unique(y_test)) > 2:  # Multi-class classification
-            # One-vs-Rest (OvR) approach for multi-class ROC curve
-            fpr, tpr, _ = roc_curve(y_test, model.predict_proba(X_test_preprocessed), pos_label=None)
-            auc_value = auc(fpr, tpr)
-        else:  # Binary classification
-            fpr, tpr, _ = roc_curve(y_test, model.predict_proba(X_test_preprocessed)[:, 1])
-            auc_value = auc(fpr, tpr)
-        
-        ax.plot(fpr, tpr, label=f'{name} (AUC = {auc_value:.2f})')
+    for name, model in models.items():
+        try:
+            y_score = model.predict_proba(X_test_preprocessed)
+            if len(np.unique(y_test)) == 2:
+                fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
+            else:
+                fpr, tpr, _ = roc_curve(y_test, y_score, multi_class='ovr')
 
-    except Exception as e:
-        st.warning(f"Error computing ROC curve for {name}: {e}")
+            ax.plot(fpr, tpr, label=f"{name} (AUC = {results[name]['AUC']:.2f})")
+        except Exception as e:
+            st.warning(f"Could not plot ROC for {name}: {e}")
 
-ax.plot([0, 1], [0, 1], 'k--', label='Random Classifier (AUC = 0.5)')
-ax.set_xlabel('False Positive Rate', color='#001a33')
-ax.set_ylabel('True Positive Rate', color='#001a33')
-ax.set_title('Receiver Operating Characteristic (ROC) Curve', color='#cc0000')
-ax.legend(loc='lower right')
-st.pyplot(fig)
+    ax.plot([0, 1], [0, 1], 'k--')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.set_title('ROC Curve Comparison')
+    ax.legend(loc="lower right")
+    st.pyplot(fig)
+else:
+    st.info("🔍 Please go to 'Model Performance' first to train and evaluate the models.")
 
 # Display the best model after the plots
 st.success(f"🏅 Best Model: {max(results, key=lambda k: results[k]['Accuracy'])} with Accuracy: {best_acc:.2f}")
