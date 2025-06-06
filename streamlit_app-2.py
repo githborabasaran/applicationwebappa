@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.feature_selection import RFE
 import os
-from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
 import joblib
 from sklearn.metrics import accuracy_score, classification_report, roc_auc_score, confusion_matrix, roc_curve, auc
 
@@ -130,8 +130,8 @@ if page == 'Model Performance':
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
             # Apply random under-sampling
-            smote = SMOTE(random_state=42)
-            X_train_res, y_train_res = smote.fit_resample(X_train, y_train)
+            under_sample = RandomUnderSampler(random_state=42)
+            X_train_res, y_train_res = under_sample.fit_resample(X_train, y_train)
 
             # Create a pipeline for preprocessing
             pipeline = Pipeline([
