@@ -131,8 +131,6 @@ if page == 'Model Performance':
 
             # Apply random under-sampling
             under_sample = RandomUnderSampler(random_state=42)
-            if len(X_train.shape) == 1:
-                X_train = X_train.reshape(-1, 1)  # converts from (3295,) to (3295, 1)
             X_train_res, y_train_res = under_sample.fit_resample(X_train, y_train)
 
             # Create a pipeline for preprocessing
