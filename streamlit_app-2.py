@@ -131,6 +131,10 @@ if page == 'Model Performance':
 
             # Apply random under-sampling
             under_sample = RandomUnderSampler(random_state=42)
+            st.write("X_train type:", type(X_train))
+            st.write("X_train shape:", getattr(X_train, "shape", "No shape"))
+            st.write("y_train type:", type(y_train))
+            st.write("y_train shape:", getattr(y_train, "shape", "No shape"))
             X_train_res, y_train_res = under_sample.fit_resample(X_train, y_train)
 
             # Create a pipeline for preprocessing
