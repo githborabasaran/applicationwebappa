@@ -282,29 +282,31 @@ if 'results' in locals() and results:
     st.markdown("### 📈 ROC Curve for Each Model 📉")
     st.write("The ROC curve below compares the true positive rate (TPR) and false positive rate (FPR) of each model.")
 
-    # Plot AUC Curve for Each Model
-    fig, ax = plt.subplots(figsize=(10, 6))
+# Plot ROC Curve for Each Model
+fig, ax = plt.subplots(figsize=(10, 6))
 
-    for name, model in models.items():
-        try:
-            y_score = model.predict_proba(X_test_preprocessed)
-            if len(np.unique(y_test)) == 2:
-                fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
-            else:
-                fpr, tpr, _ = roc_curve(y_test, y_score, multi_class='ovr')
+for name, model in models.items():
+    try:
+        y_score = model.predict_proba(X_test_preprocessed)
+        if len(np.unique(y_test)) == 2:
+            fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
+            auc_score = auc(fpr, tpr)
+            ax.plot(fpr, tpr, label=f"{name} (AUC = {auc_score:.2f})")
+        else:
+            # For multiclass: calculate AUC for each class
+            for i in range(y_score.shape[1]):
+                fpr, tpr, _ = roc_curve(y_test == i, y_score[:, i])
+                auc_score = auc(fpr, tpr)
+                ax.plot(fpr, tpr, label=f"{name} (Class {i} AUC = {auc_score:.2f})")
+    except Exception as e:
+        st.warning(f"⚠️ ROC curve generation failed for {name}: {str(e)}")
 
-            ax.plot(fpr, tpr, label=f"{name} (AUC = {results[name]['AUC']:.2f})")
-        except Exception as e:
-            st.warning(f"Could not plot ROC for {name}: {e}")
-
-    ax.plot([0, 1], [0, 1], 'k--')
-    ax.set_xlabel('False Positive Rate')
-    ax.set_ylabel('True Positive Rate')
-    ax.set_title('ROC Curve Comparison')
-    ax.legend(loc="lower right")
-    st.pyplot(fig)
-else:
-    st.info("🔍 Please go to 'Model Performance' first to train and evaluate the models.")
+ax.plot([0, 1], [0, 1], 'k--', label='Random Chance')
+ax.set_xlabel('False Positive Rate')
+ax.set_ylabel('True Positive Rate')
+ax.set_title('ROC Curve Comparison')
+ax.legend()
+st.pyplot(fig)
 
 # Display the best model after the plots
 st.success(f"🏅 Best Model: {max(results, key=lambda k: results[k]['Accuracy'])} with Accuracy: {best_acc:.2f}")
