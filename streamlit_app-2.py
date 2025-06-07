@@ -104,7 +104,6 @@ if page == 'Model Performance':
     # ✅ Use hardcoded file path
     file_path = 'bank-additional.csv'
 
-
     if os.path.exists(file_path):
         df = pd.read_csv(file_path, sep=';', quotechar='"')
         st.write("### 📜 Uploaded Data Preview")
@@ -224,51 +223,87 @@ if page == 'Model Performance':
     
     else:
         st.error(f"🚫 File not found at: {file_path}")
-        results = {}  # Optional: prevent NameError if you use results outside later
+        results={}
 
+elif page == 'Logistic Regression':
+    st.write("""
+    ### 📘 Logistic Regression
+    Logistic Regression is a statistical method used for binary classification. 
+    It estimates the probability of a binary response based on one or more predictor variables.
+    
+    **Key points:**
+    - It uses the logistic function to model the probability of the default class (usually 1).
+    - It is widely used due to its simplicity and efficiency for binary classification tasks.
+    - The model provides a probabilistic output which can be converted to class labels.
+    - Logistic Regression works best with linearly separable data.
+    """)
+
+elif page == 'Random Forest':
+    st.write("""
+    ### 📚 Random Forest
+    Random Forest is an ensemble learning method that constructs multiple decision trees and merges them together 
+    to improve accuracy and control overfitting.
+    
+    **Key points:**
+    - It reduces overfitting by averaging the predictions of multiple trees.
+    - It can be used for both classification and regression tasks.
+    - Random Forest is a powerful algorithm that works well on large datasets with a high-dimensional feature space.
+    - The final prediction is made by taking a majority vote (for classification) or averaging the outputs (for regression).
+    """)
+
+elif page == 'Neural Network':
+    st.write("""
+    ### 🤖 Neural Network
+    A Neural Network is a model inspired by the human brain that learns patterns from data through a series of interconnected nodes (neurons).
+    
+    **Key points:**
+    - It is composed of layers: input layer, hidden layers, and output layer.
+    - Neural Networks are highly flexible and can model complex non-linear relationships in data.
+    - They are especially useful in tasks like image recognition, speech processing, and natural language processing.
+    - Training a neural network involves adjusting the weights between the neurons to minimize the error.
+    """)
 # Add a section for the accuracy plot
-if 'results' in locals() and results:
-    st.markdown("### 📊 Model Accuracy Comparison 🏅")
-    st.write("The bar chart below shows the accuracy of each model evaluated.")
+st.markdown("### 📊 Model Accuracy Comparison 🏅")
+st.write("The bar chart below shows the accuracy of each model evaluated.")
 
-    # Plot Accuracy of Each Model
-    fig, ax = plt.subplots(figsize=(10, 6))
-    model_names = list(results.keys())
-    accuracies = [results[name]['Accuracy'] for name in model_names]
+# Plot Accuracy of Each Model
+fig, ax = plt.subplots(figsize=(10, 6))
+model_names = list(results.keys())
+accuracies = [results[name]['Accuracy'] for name in model_names]
 
-    ax.barh(model_names, accuracies, color=['#001a33', '#ff4500', '#990000', '#ffa500', '#33cc33'])
-    ax.set_xlabel('Accuracy', color='#001a33')
-    ax.set_title('Model Accuracy Comparison', color='#cc0000')
-    st.pyplot(fig)
+ax.barh(model_names, accuracies, color=['#001a33', '#ff4500', '#990000', '#ffa500', '#33cc33'])
+ax.set_xlabel('Accuracy', color='#001a33')
+ax.set_title('Model Accuracy Comparison', color='#cc0000')
+st.pyplot(fig)
 
-    # Add a section for the ROC curve plot
-    st.markdown("### 📈 ROC Curve for Each Model 📉")
-    st.write("The ROC curve below compares the true positive rate (TPR) and false positive rate (FPR) of each model.")
+# Add a section for the ROC curve plot
+st.markdown("### 📈 ROC Curve for Each Model 📉")
+st.write("The ROC curve below compares the true positive rate (TPR) and false positive rate (FPR) of each model.")
 
-# Plot ROC Curve for Each Model
+# Plot AUC Curve for Each Model
 fig, ax = plt.subplots(figsize=(10, 6))
 
 for name, model in models.items():
+    # Compute the ROC curve for the current model
     try:
-        y_score = model.predict_proba(X_test_preprocessed)
-        if len(np.unique(y_test)) == 2:
-            fpr, tpr, _ = roc_curve(y_test, y_score[:, 1])
-            auc_score = auc(fpr, tpr)
-            ax.plot(fpr, tpr, label=f"{name} (AUC = {auc_score:.2f})")
-        else:
-            # For multiclass: calculate AUC for each class
-            for i in range(y_score.shape[1]):
-                fpr, tpr, _ = roc_curve(y_test == i, y_score[:, i])
-                auc_score = auc(fpr, tpr)
-                ax.plot(fpr, tpr, label=f"{name} (Class {i} AUC = {auc_score:.2f})")
-    except Exception as e:
-        st.warning(f"⚠️ ROC curve generation failed for {name}: {str(e)}")
+        if len(np.unique(y_test)) > 2:  # Multi-class classification
+            # One-vs-Rest (OvR) approach for multi-class ROC curve
+            fpr, tpr, _ = roc_curve(y_test, model.predict_proba(X_test_preprocessed), pos_label=None)
+            auc_value = auc(fpr, tpr)
+        else:  # Binary classification
+            fpr, tpr, _ = roc_curve(y_test, model.predict_proba(X_test_preprocessed)[:, 1])
+            auc_value = auc(fpr, tpr)
+        
+        ax.plot(fpr, tpr, label=f'{name} (AUC = {auc_value:.2f})')
 
-ax.plot([0, 1], [0, 1], 'k--', label='Random Chance')
-ax.set_xlabel('False Positive Rate')
-ax.set_ylabel('True Positive Rate')
-ax.set_title('ROC Curve Comparison')
-ax.legend()
+    except Exception as e:
+        st.warning(f"Error computing ROC curve for {name}: {e}")
+
+ax.plot([0, 1], [0, 1], 'k--', label='Random Classifier (AUC = 0.5)')
+ax.set_xlabel('False Positive Rate', color='#001a33')
+ax.set_ylabel('True Positive Rate', color='#001a33')
+ax.set_title('Receiver Operating Characteristic (ROC) Curve', color='#cc0000')
+ax.legend(loc='lower right')
 st.pyplot(fig)
 
 # Display the best model after the plots
@@ -351,43 +386,3 @@ elif credit_score >= 400:
 else:
     st.error("❤️ Poor credit score.")
 
-
-
-
-elif page == 'Logistic Regression':
-    st.write("""
-    ### 📘 Logistic Regression
-    Logistic Regression is a statistical method used for binary classification. 
-    It estimates the probability of a binary response based on one or more predictor variables.
-    
-    **Key points:**
-    - It uses the logistic function to model the probability of the default class (usually 1).
-    - It is widely used due to its simplicity and efficiency for binary classification tasks.
-    - The model provides a probabilistic output which can be converted to class labels.
-    - Logistic Regression works best with linearly separable data.
-    """)
-
-elif page == 'Random Forest':
-    st.write("""
-    ### 📚 Random Forest
-    Random Forest is an ensemble learning method that constructs multiple decision trees and merges them together 
-    to improve accuracy and control overfitting.
-    
-    **Key points:**
-    - It reduces overfitting by averaging the predictions of multiple trees.
-    - It can be used for both classification and regression tasks.
-    - Random Forest is a powerful algorithm that works well on large datasets with a high-dimensional feature space.
-    - The final prediction is made by taking a majority vote (for classification) or averaging the outputs (for regression).
-    """)
-
-elif page == 'Neural Network':
-    st.write("""
-    ### 🤖 Neural Network
-    A Neural Network is a model inspired by the human brain that learns patterns from data through a series of interconnected nodes (neurons).
-    
-    **Key points:**
-    - It is composed of layers: input layer, hidden layers, and output layer.
-    - Neural Networks are highly flexible and can model complex non-linear relationships in data.
-    - They are especially useful in tasks like image recognition, speech processing, and natural language processing.
-    - Training a neural network involves adjusting the weights between the neurons to minimize the error.
-    """)
